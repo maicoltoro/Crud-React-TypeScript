@@ -1,48 +1,54 @@
-import { useState } from "react"
-import { Todos } from "./Todos";
-import { FilterValue, TodoTitle, type TodoId, type Todo as TodoType } from "./types";
-import { TODO_FILTERS } from "./consts";
-import { Footer } from "./Footer";
-import { Header } from "./Header";
+import { useEffect, useState } from "react"
+import { Todos } from "./Componentes/Todos";
+import { FilterValue, TodoTitle, type TodoId, type Todo as TodoType } from "./Tipos/types";
+import { TODO_FILTERS } from "./Tipos/consts";
+import { Footer } from "./Componentes/Footer";
+import { Header } from "./Componentes/Header";
+import axios from "axios";
 
-const mockTodos = [
-  {
-    id : '1',
-    title : 'Aprender React',
-    completed: false
-  },
-  {
-    id : '2',
-    title : 'Aprender TypeScript',
-    completed: true
-  },{
-    id : '3',
-    title : 'Aprender Angular',
-    completed: false
-  },{
-    id : '4',
-    title : 'Conseguir trabajo',
-    completed: true
-  },
-]
+interface estructuraTodo {
+  id: string;
+  title: string;
+  completed: boolean;
+}
 
-const  App = (): JSX.Element => {
-  const [todos,SetTodos] =useState(mockTodos);
+const api = axios.create({
+  baseURL: 'http://localhost:5000/'
+})
+
+const  App =  () : JSX.Element => {
+  const [todos,SetTodos] = useState<estructuraTodo[]>([]);
   const [filterSelected , setFilterSelected] = useState<FilterValue> (TODO_FILTERS.ALL)
 
-  const handleRemove = ({id} :TodoId) :void =>{
+  const handleRemove = async ({id} :TodoId) : Promise<void> =>{
+    await api.post(`/api/Todo/EliminarTodo`, {id})
     const newTodo = todos.filter(todo => todo.id !== id)
     SetTodos(newTodo)
   }
 
+  useEffect(() =>{
+    const fetchData = async () =>{
+      try {
+        const solicitud = await api.post(`/api/Todo/MostrarTodo`)
+        SetTodos(solicitud.data) 
+      } catch (error) {
+        console.error('Error fetching todos:', error);
+      }
+    }
+    
+    fetchData();
+  },[])
+
   const handlerFilterChange = (filter : FilterValue) : void =>{
-    console.log(filter)
     setFilterSelected(filter);
   }
 
   const activeCount = todos.filter(todo => !todo.completed).length
   const completedCount = todos.length - activeCount
-  const handleComplete = ({id , completed} :Pick <TodoType, 'id' | 'completed'>) :void =>{
+
+  const handleComplete = async ({id , completed} :Pick <TodoType, 'id' | 'completed'>) :Promise<void> =>{
+
+    await api.post(`/api/Todo/ActualizarTodoCompleted`, {id,completed})
     const newTodo = todos.map(todo => {
       if(todo.id == id){
         return{
@@ -61,18 +67,21 @@ const  App = (): JSX.Element => {
     return todo
   })
 
-  const handlerRemoveAllCompleted = () :void =>{
-    const newTodo = todos.filter(todo => !todo.completed)
-    SetTodos(newTodo)
+  const handlerRemoveAllCompleted = async () : Promise<void> =>{
+    const newTodo = todos.filter(todo => todo.completed)
+    newTodo.forEach(async e =>{
+      await api.post(`/api/Todo/EliminarTodo`, {id : e.id})
+    })
+    location.reload()
   }
-  const handleAddTodo = ({title}: TodoTitle) : void =>{
+
+  const handleAddTodo = async ({title}: TodoTitle) : Promise<void> =>{
     const newTodo = {
-      id:crypto.randomUUID(),
       title,
       completed : false
     }
-    const newTodos = [...todos, newTodo]
-    SetTodos(newTodos)
+    const solicitud = await api.post(`/api/Todo/GuardarTodo`, newTodo)
+    if(solicitud.data[0].Respuesta == 1) location.reload()
   }
   return (
     <div className="todoapp">

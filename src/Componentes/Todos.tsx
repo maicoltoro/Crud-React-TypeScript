@@ -1,5 +1,5 @@
 import { Todo } from "./Todo"
-import {TodoId, type ListOfTodos, type Todo as TodoType} from "./types"
+import {TodoId, type ListOfTodos, type Todo as TodoType} from "../Tipos/types"
 interface Props {
     todos:ListOfTodos
     onToggleCompleteTodo :({id, completed} : Pick<TodoType, 'id' |'completed'>) =>void

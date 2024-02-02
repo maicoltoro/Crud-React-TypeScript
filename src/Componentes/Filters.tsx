@@ -1,5 +1,5 @@
-import { FILTER_BUTTONS } from "./consts"
-import { FilterValue } from "./types"
+import { FILTER_BUTTONS } from "../Tipos/consts"
+import { FilterValue } from "../Tipos/types"
 
 interface Props{
     filterSelect:FilterValue
